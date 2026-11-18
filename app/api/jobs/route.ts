@@ -1,4 +1,4 @@
-import { getWebhookConfig, isAuthorized, jsonError } from "@/lib/server-auth";
+import { getWebhookConfig, isAuthorized, jsonError } from "../../../lib/server-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
