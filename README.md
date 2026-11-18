@@ -12,6 +12,12 @@ This repository is a public-facing Vercel website with a private owner console. 
 ## Important: not yet connected to your private services
 This package does not contain your Gemini key, Google Sheets credential, n8n URL, or Vercel credentials. Add those directly in the relevant service dashboards. Never commit secrets to GitHub or expose them as `NEXT_PUBLIC_*` variables.
 
+## Owner console
+
+The Next.js App Router application lives in `app/`. The public landing page contains no job data. The owner queue requires the `ADMIN_ACCESS_TOKEN` in an Authorization Bearer header. Keep it private; it is held in page memory only and is not written to local storage or cookies. Server routes proxy to n8n and never return the webhook secret.
+
+The API routes enforce owner-token checks, validate decision inputs, use HTTPS-only configured webhook URLs, disable caching, and apply request timeouts. Add platform-level rate limiting/WAF before broad public promotion. Configure the n8n Header Auth credential exactly as described below.
+
 ## Vercel deployment
 1. Create a GitHub repository and upload this project.
 2. In Vercel, select **Add New → Project**, import that repository, and use the default Next.js settings.
@@ -27,7 +33,7 @@ Create two production webhooks:
 Required job object fields:
 `job_id, title, company, location, work_mode, job_url, source, posted_at, score, status, match_reasons, gaps, tailored_resume_text, cover_letter`.
 
-Configure Header Auth on both n8n webhooks using the same secret stored as `N8N_WEBHOOK_SECRET` in Vercel. The decision webhook must only update a status field. It must not connect to any browser automation or application-submit node. Manual submission remains outside this workflow.
+Configure n8n Header Auth on both webhooks with header name `Authorization` and value `Bearer <the exact N8N_WEBHOOK_SECRET value>`. The Next.js server adds this header; do not expose the secret in client code. The decision webhook must only update a status field. It must not connect to any browser automation or application-submit node. Manual submission remains outside this workflow.
 
 ## Daily 50-job design
 Run two scheduled n8n sourcing batches per day, each with a maximum of 25 candidate listings. Normalize and validate each listing, deduplicate by canonical URL and a normalized company+title+location fingerprint, screen against the verified CV, and append eligible jobs to the review sheet. This is a target cap, not a guarantee that 50 valid jobs exist each day. Do not invent listings to reach the target.
