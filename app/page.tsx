@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 
 type Job = {
   job_id: string; title: string; company: string; location: string; work_mode: string;
@@ -16,6 +16,7 @@ function asLines(value: string[] | string | undefined): string[] {
 
 export default function Home() {
   const [token, setToken] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,6 +31,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not load the review queue.");
       setJobs(Array.isArray(data.jobs) ? data.jobs : []);
+      setAuthenticated(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setJobs([]);
@@ -63,7 +65,6 @@ export default function Home() {
   }
 
   const visibleJobs = useMemo(() => filter === "ALL" ? jobs : jobs.filter((job) => job.status === filter), [jobs, filter]);
-  useEffect(() => { /* The owner token intentionally stays in component memory only. */ }, []);
 
   return (
     <main className="shell">
@@ -79,7 +80,7 @@ export default function Home() {
         <div className="guardrail"><span className="guard-icon">✓</span><span><strong>You stay in control.</strong> Approving a job only marks it ready for manual submission. This system never submits applications automatically.</span></div>
       </section>
 
-      {!jobs.length && !loading && !error ? (
+      {!authenticated && !loading ? (
         <section className="login-card">
           <div className="section-kicker">OWNER ACCESS</div><h2>Open your review queue</h2>
           <p>Enter the admin access token configured in your Vercel project. It is used for this session only and is not saved in browser storage.</p>
@@ -120,7 +121,7 @@ export default function Home() {
             })}
           </div>
           {notice && <p className="success" role="status">{notice}</p>}{error && <p className="error" role="alert">{error}</p>}
-          <button className="signout" onClick={() => { setToken(""); setJobs([]); setFilter("ALL"); setExpanded(null); setNotice(""); setError(""); }}>Lock owner console</button>
+          <button className="signout" onClick={() => { setToken(""); setAuthenticated(false); setJobs([]); setFilter("ALL"); setExpanded(null); setNotice(""); setError(""); }}>Lock owner console</button>
         </section>
       )}
       <footer><span>Vikash AI Job Agent</span><span>Private review · Human decision required</span></footer>
